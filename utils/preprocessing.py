@@ -12,3 +12,11 @@ def clean_txt(str) -> str:
 
 def get_words(str) -> list:
     return re.split(r'\W+', str)
+
+
+def clean_text(str) -> str:
+    """
+    :param str: Str à clean
+    :return: str sans espaces et ponctuation
+    """
+    return re.sub(r'[^\w\s^]', '', str).lower().replace(" ", "")
