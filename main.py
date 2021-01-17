@@ -2,6 +2,7 @@ import pandas as pd
 from sklearn.utils import shuffle
 from sklearn.preprocessing import LabelBinarizer
 from sklearn.preprocessing import OneHotEncoder
+from sklearn import model_selection
 
 import os
 dir_path = os.path.dirname(os.path.realpath(__file__))
@@ -42,6 +43,10 @@ print("Database of "+str(len(X))+ " subtitles, with "+str(len(labels))+" speaker
 
 print(X[:10])
 print(y[:10])
+
+X_train, X_test, y_train, y_test = model_selection.train_test_split(X,y, test_size=0.2)
+
+X_train, X_val, y_train, y_val = model_selection.train_test_split(X_train,y_train, test_size=0.2)
 
 
 
