@@ -2,6 +2,9 @@ import pandas as pd
 from sklearn.utils import shuffle
 from sklearn.preprocessing import LabelBinarizer
 from sklearn.preprocessing import OneHotEncoder
+
+from utils.preprocessing import tokenization
+
 from sklearn import model_selection
 
 import os
@@ -10,7 +13,7 @@ os.chdir(dir_path)
 
 # Head : idx,text,type,details,episodeid,doctorid
 df = pd.read_csv("dataset/all-scripts.csv")
-
+df = df.dropna()
 text = df[df['type'] == 'talk']
 
 # Personnages étudiés
@@ -41,12 +44,18 @@ y = encoder.fit_transform(y)
 labels = data.details.unique()
 print("Database of "+str(len(X))+ " subtitles, with "+str(len(labels))+" speakers")
 
-print(X[:10])
-print(y[:10])
+#tokenization 
+X = tokenization(X)
+
 
 X_train, X_test, y_train, y_test = model_selection.train_test_split(X,y, test_size=0.2)
 
 X_train, X_val, y_train, y_val = model_selection.train_test_split(X_train,y_train, test_size=0.2)
+
+
+
+
+
 
 
 
