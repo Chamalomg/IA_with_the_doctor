@@ -1,9 +1,18 @@
 import pandas as pd
 from sklearn.utils import shuffle
 from sklearn.preprocessing import LabelBinarizer
-from sklearn.preprocessing import OneHotEncoder
 
-from utils.preprocessing import tokenization
+from tensorflow import keras
+from tensorflow.keras import layers
+
+from keras.preprocessing.text import Tokenizer
+from keras.preprocessing.sequence import pad_sequences
+
+#preprocessing utiler ça 
+#https://www.tensorflow.org/api_docs/python/tf/keras/preprocessing/text/Tokenizer
+
+#votre matrice de confusion metrics
+
 
 from sklearn import model_selection
 
@@ -44,13 +53,46 @@ y = encoder.fit_transform(y)
 labels = data.details.unique()
 print("Database of "+str(len(X))+ " subtitles, with "+str(len(labels))+" speakers")
 
-#tokenization 
-X = tokenization(X)
+#preprossecing
+tokenizer = keras.preprocessing.text.Tokenizer(
+    filters='!"#$%&()*+,-./:;<=>?@[\\]^_`{|}~\t\n',
+    lower=True,
+    split=" ",
+)
+#Updates internal vocabulary based on a list of texts
+tokenizer.fit_on_texts(X)
+print("number of words : " + str(len(tokenizer.word_counts)))
+
+X = tokenizer.texts_to_sequences(X)
+#fix input length
+X = pad_sequences(X, padding='post')
 
 
+#add Normalisation !!!
 X_train, X_test, y_train, y_test = model_selection.train_test_split(X,y, test_size=0.2)
 
 X_train, X_val, y_train, y_val = model_selection.train_test_split(X_train,y_train, test_size=0.2)
+
+
+model = keras.Sequential(
+    [
+    #layers.Input(shape=(None,)),
+    layers.Embedding(input_dim=240,output_dim=32,input_length=X.shape[1]),
+    layers.Dense(32),
+    #layers.LSTM(units=32,return_sequences=True),
+    #layers.LSTM(units=64),
+    layers.Dense(len(OUR_PERS),activation="softmax")
+    ]
+)
+
+
+model.compile(loss="categorical_crossentropy",optimizer="adam",metrics=["accuracy"])
+model.summary()
+
+#model.fit(X_train,y_train,batch_size=20,epochs=40,validation_data=(X_val,y_val))
+
+
+
 
 
 
