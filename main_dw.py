@@ -9,11 +9,13 @@ from tensorflow.keras import layers
 from keras.preprocessing.text import Tokenizer
 from keras.preprocessing.sequence import pad_sequences
 
-# preprocessing utiler ça
-# https://www.tensorflow.org/api_docs/python/tf/keras/preprocessing/text/Tokenizer
+from sklearn.metrics import confusion_matrix
+import matplotlib.pyplot as plt
+
+#preprocessing utiler ça 
+#https://www.tensorflow.org/api_docs/python/tf/keras/preprocessing/text/Tokenizer
 
 # votre matrice de confusion metrics
-
 
 from sklearn import model_selection
 
@@ -22,9 +24,11 @@ import os
 dir_path = os.path.dirname(os.path.realpath(__file__))
 os.chdir(dir_path)
 
-# Const
-vocab_size = 10000
-max_length = 100
+
+#Const
+vocab_size = 20000
+max_length = 200
+main_character = 'DOCTOR'
 
 # Head : idx,text,type,details,episodeid,doctorid
 df = pd.read_csv("dataset/all-scripts.csv")
@@ -39,8 +43,8 @@ y = data['details'].tolist()
 number_doctor = 0
 number_other = 0
 for i in range(len(y)):
-    if (y[i] == 'DOCTOR'):
-        y[i] = 1
+    if(y[i]==main_character):
+        y[i]=1
         number_doctor += 1
     else:
         y[i] = 0
@@ -71,10 +75,12 @@ y_test = np.array(y_test)
 
 # Model
 model = keras.Sequential([
-    keras.layers.Embedding(input_dim=10000, output_dim=16, input_length=max_length),
-    keras.layers.GlobalAveragePooling1D(),
-    keras.layers.Dense(24, activation='relu'),
-    keras.layers.Dense(1, activation='sigmoid')
+    layers.Embedding(input_dim=vocab_size, output_dim=32, input_length=max_length),
+    #layers.Conv1D(32, 7, padding="valid", activation="relu", strides=3),
+    layers.GlobalAveragePooling1D(),
+    layers.Dense(32, activation='relu'),
+    layers.Dense(16, activation='relu'),
+    layers.Dense(1, activation='sigmoid')
 ])
 model.compile(loss='binary_crossentropy', optimizer='adam', metrics=['accuracy'])
 model.summary()
