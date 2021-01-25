@@ -9,11 +9,13 @@ from tensorflow.keras import layers
 from keras.preprocessing.text import Tokenizer
 from keras.preprocessing.sequence import pad_sequences
 
+from sklearn.metrics import confusion_matrix
+import matplotlib.pyplot as plt
+
 #preprocessing utiler ça 
 #https://www.tensorflow.org/api_docs/python/tf/keras/preprocessing/text/Tokenizer
 
 #votre matrice de confusion metrics
-
 
 from sklearn import model_selection
 
@@ -24,28 +26,30 @@ os.chdir(dir_path)
 #Const
 vocab_size = 10000
 max_length = 100
+main_character = 'tyrion lannister'
 
 # Head : idx,text,type,details,episodeid,doctorid
-df = pd.read_csv("dataset/all-scripts.csv")
+df = pd.read_csv ("dataset/Game_of_Thrones_Script.csv")
 df = df.dropna()
-data = df[df['type'] == 'talk']
+print(df.head)
+data = df
 data = shuffle(data)
 
-X = data['text'].tolist()
-y = data['details'].tolist()
+X = data['Sentence'].tolist()
+y = data['Name'].tolist()
 
 #Extract labels
-number_doctor = 0
+number_main_character = 0
 number_other = 0
 for i in range(len(y)):
-    if(y[i]=='DOCTOR'):
+    if(y[i]==main_character):
         y[i]=1
-        number_doctor += 1
+        number_main_character += 1
     else:
         y[i]=0
         number_other += 1
 
-print("Database of "+str(len(X))+ " subtitles, with : "+str(number_doctor)+" doctor's sentences and "+str(number_other)+ " others's sentences")
+print("Database of "+str(len(X))+ " subtitles, with : "+str(number_main_character)+" main character's sentences and "+str(number_other)+ " others's sentences")
 
 #split train test 
 X_train, X_test, y_train, y_test = model_selection.train_test_split(X,y, test_size=0.2)
@@ -68,15 +72,19 @@ y_test = np.array(y_test)
 
 #Model
 model = keras.Sequential([
-    keras.layers.Embedding(input_dim=10000, output_dim=16, input_length=max_length),
-    keras.layers.GlobalAveragePooling1D(),
-    keras.layers.Dense(24, activation='relu'),
-    keras.layers.Dense(1, activation='sigmoid')
+    layers.Embedding(input_dim=vocab_size, output_dim=8, input_length=max_length),
+    #layers.Conv1D(32, 7, padding="valid", activation="relu", strides=3),
+    layers.GlobalAveragePooling1D(),
+    layers.Dense(32, activation='relu'),
+    layers.Dense(32, activation='relu'),
+    layers.Dense(1, activation='sigmoid')
 ])
 model.compile(loss='binary_crossentropy',optimizer='adam',metrics=['accuracy'])
 model.summary()
 
-model.fit(X_train, y_train, epochs=10, validation_data=(X_test, y_test))
+model.fit(X_train, y_train, epochs=50, validation_data=(X_test, y_test))
+
+
 
 
 
