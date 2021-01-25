@@ -1,7 +1,6 @@
 from matplotlib.pyplot import figure
 import matplotlib.pyplot as plt
 import seaborn as sns
-import pandas as pd
 
 
 def plot_loss(history):
@@ -15,11 +14,8 @@ def plot_loss(history):
     plt.show()
 
 
-def confusion(conf):
+def plot_confusion(conf):
     sns.heatmap(conf, square=True, annot=True, cbar=False
                 , xticklabels=list(['Tyrion', 'Other'])
                 , yticklabels=list(['Tyrion', 'Other']))
     plt.show()
-
-
-

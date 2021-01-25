@@ -1,26 +1,12 @@
 import pandas as pd
-import numpy as np
-from sklearn.utils import shuffle
-from sklearn.preprocessing import LabelBinarizer
-
 from tensorflow import keras
 from tensorflow.keras import layers
-
 from tensorflow.keras.preprocessing.text import Tokenizer
 from tensorflow.keras.preprocessing.sequence import pad_sequences
-
 from sklearn.metrics import classification_report, confusion_matrix
-import matplotlib.pyplot as plt
-import seaborn as sns
-
-# preprocessing utiler ça
-# https://www.tensorflow.org/api_docs/python/tf/keras/preprocessing/text/Tokenizer
-
-# votre matrice de confusion metrics
-
 from sklearn import model_selection
-
 import os
+from utils.plot import plot_confusion
 
 dir_path = os.path.dirname(os.path.realpath(__file__))
 os.chdir(dir_path)
@@ -82,13 +68,6 @@ model.summary()
 model.fit(X_train, y_train, epochs=10, validation_data=(X_test, y_test))
 
 
-def confusion(conf):
-    sns.heatmap(conf, square=True, annot=True, cbar=False
-                , xticklabels=list(['Tyrion', 'Other'])
-                , yticklabels=list(['Tyrion', 'Other']))
-    plt.show()
-
-
 Y_pred = model.predict_generator(X_test)
 y_pred = np.argmax(Y_pred, axis=1)
 print('Confusion Matrix')
@@ -98,3 +77,4 @@ target_names = ['DW', 'Got']
 print(classification_report(y_test, y_pred, target_names=target_names))
 
 conf = confusion_matrix(y_test, y_pred)
+plot_confusion(conf)

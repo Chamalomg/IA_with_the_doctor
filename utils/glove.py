@@ -13,8 +13,7 @@ def readGloveFile(gloveFile):
             record = line.strip().split()
             token = record[0]  # take the token (word) from the text line
             try:
-                wordToGlove[token] = np.array(record[1:],
-                                              dtype=np.float32)  # associate the Glove embedding vector to a that token (word)
+                wordToGlove[token] = np.array(record[1:], dtype=np.float32)  # associate the Glove embedding vector to a that token (word)
             except:
                 print('line skipped : ', count_fail)
                 count_fail += 1
@@ -39,8 +38,7 @@ def createPretrainedEmbeddingLayer(wordToGlove, wordToIndex, isTrainable=False):
         try:
             embeddingMatrix[index, :] = wordToGlove[word]  # create embedding: word index to Glove word embedding
         except IndexError:
-            pass
-    print('for out')
+            print('skipping index out of bound')
 
     embeddingLayer = keras.layers.Embedding(len(wordToIndex), embDim, embeddings_initializer=Constant(embeddingMatrix),
                                             trainable=isTrainable)

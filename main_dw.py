@@ -1,16 +1,16 @@
 import pandas as pd
 from sklearn.metrics import confusion_matrix, classification_report
 from sklearn.utils import shuffle
-from tensorflow import keras
-from tensorflow.keras import layers
 from tensorflow.keras.preprocessing.text import Tokenizer
 from tensorflow.keras.preprocessing.sequence import pad_sequences
 from sklearn import model_selection
 import os
 import numpy as np
+from utils.glove import createPretrainedEmbeddingLayer, readGloveFile
+from utils.plot import plot_confusion
+from utils.utils import define_model
 
-from utils.plot import confusion
-
+# Root file
 dir_path = os.path.dirname(os.path.realpath(__file__))
 os.chdir(dir_path)
 
@@ -32,7 +32,7 @@ y = data['details'].tolist()
 number_doctor = 0
 number_other = 0
 for i in range(len(y)):
-    if (y[i] == main_character):
+    if y[i] == main_character:
         y[i] = 1
         number_doctor += 1
     else:
@@ -60,19 +60,16 @@ y_train = np.array(y_train)
 X_test = np.array(X_test)
 y_test = np.array(y_test)
 
+# usage
+wordToIndex, indexToWord, wordToGlove = readGloveFile('glove.6B.50d/glove.6B.50d.txt')
+pretrainedEmbeddingLayer = createPretrainedEmbeddingLayer(wordToGlove, wordToIndex, False)
+
 # Model
-model = keras.Sequential([
-    layers.Embedding(input_dim=vocab_size, output_dim=32, input_length=max_length),
-    # layers.Conv1D(32, 7, padding="valid", activation="relu", strides=3),
-    layers.GlobalAveragePooling1D(),
-    layers.Dense(32, activation='relu'),
-    layers.Dense(16, activation='relu'),
-    layers.Dense(1, activation='sigmoid')
-])
+model = define_model(pretrainedEmbeddingLayer)
 model.compile(loss='binary_crossentropy', optimizer='adam', metrics=['accuracy'])
 model.summary()
 
-model.fit(X_train, y_train, epochs=10, validation_data=(X_test, y_test))
+model.fit(X_train, y_train, epochs=50, validation_data=(X_test, y_test))
 
 Y_pred = model.predict_generator(X_test)
 y_pred = np.argmax(Y_pred, axis=1)
@@ -83,4 +80,4 @@ target_names = ['Other', 'Doctor']
 print(classification_report(y_test, y_pred, target_names=target_names))
 
 conf = confusion_matrix(y_test, y_pred)
-confusion()
+plot_confusion(conf)
