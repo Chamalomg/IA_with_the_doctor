@@ -1,87 +1,82 @@
 import pandas as pd
 import numpy as np
 from sklearn.utils import shuffle
-from sklearn.preprocessing import LabelBinarizer, LabelEncoder
-from sklearn.preprocessing import OneHotEncoder
-from sklearn import model_selection
-import os
+from sklearn.preprocessing import LabelBinarizer
 
-# TODO: Gérer le docteur !
-from utils.preprocessing import get_words
+from tensorflow import keras
+from tensorflow.keras import layers
+
+from keras.preprocessing.text import Tokenizer
+from keras.preprocessing.sequence import pad_sequences
+
+# preprocessing utiler ça
+# https://www.tensorflow.org/api_docs/python/tf/keras/preprocessing/text/Tokenizer
+
+# votre matrice de confusion metrics
+
+
+from sklearn import model_selection
+
+import os
 
 dir_path = os.path.dirname(os.path.realpath(__file__))
 os.chdir(dir_path)
 
+# Const
+vocab_size = 10000
+max_length = 100
+
 # Head : idx,text,type,details,episodeid,doctorid
 df = pd.read_csv("dataset/all-scripts.csv")
-
-text = df[df['type'] == 'talk']
-
-# Personnages étudiés
-OUR_PERS = []
-with open('dataset/personnages.txt', 'r') as f:
-    OUR_PERS = f.readlines()
-OUR_PERS = [x.strip('\n') for x in OUR_PERS]
-
-
-def pers_text(df, pers) -> pd.DataFrame:
-    """script d'un personnage en particulier"""
-    return text[text['details'] == pers]
-
-
-data = pers_text(df, '')
-for pers in OUR_PERS:
-    # print('Text from {} :'.format(pers))
-    # print(pers_text(df, pers).head())
-    data = data.append(pers_text(df, pers))
-
+df = df.dropna()
+data = df[df['type'] == 'talk']
 data = shuffle(data)
-# extract data to list --> X : subtitle / y : Speaker
+
 X = data['text'].tolist()
 y = data['details'].tolist()
-# transforme string labels into binary vector
-encoder = LabelBinarizer()
-y = encoder.fit_transform(y)
 
-# extract labels
-labels = data.details.unique()
-print("Database of " + str(len(X)) + " subtitles, with " + str(len(labels)) + " speakers")
+# Extract labels
+number_doctor = 0
+number_other = 0
+for i in range(len(y)):
+    if (y[i] == 'DOCTOR'):
+        y[i] = 1
+        number_doctor += 1
+    else:
+        y[i] = 0
+        number_other += 1
 
-# print('X : \n', X[0:5])
-# print('y : \n', y[0:5])
+print("Database of " + str(len(X)) + " subtitles, with : " + str(number_doctor) + " doctor's sentences and " + str(
+    number_other) + " others's sentences")
 
+# split train test
 X_train, X_test, y_train, y_test = model_selection.train_test_split(X, y, test_size=0.2)
-X_train, X_val, y_train, y_val = model_selection.train_test_split(X_train, y_train, test_size=0.2)
 
+# preprossessing tokenization + padding(to fix )
+tokenizer = Tokenizer(num_words=vocab_size, oov_token="<OOV>")
+tokenizer.fit_on_texts(X_train)
 
-##################################################
-# TEST
-##################################################
-# values = np.array(get_words(X[1]))
-# print(values)
-# # integer encode
-# label_encoder = LabelEncoder()
-# integer_encoded = label_encoder.fit_transform(values)
-# print(integer_encoded)
-# integer_encoded = integer_encoded.reshape(len(integer_encoded), 1)
-#
-# # binary encode
-# onehot_encoder = OneHotEncoder(sparse=False)
-#
-# onehot_encoded = onehot_encoder.fit_transform(integer_encoded)
-# print(onehot_encoded)
+X_train = tokenizer.texts_to_sequences(X_train)
+X_train = pad_sequences(X_train, maxlen=max_length, padding="post", truncating="post")
 
-def dictionary(total_mot):
-    return LabelEncoder().fit_transform(total_mot)
+X_test = tokenizer.texts_to_sequences(X_test)
+X_test = pad_sequences(X_test, maxlen=max_length, padding="post", truncating="post")
 
+import numpy as np
 
-def one_hot(liste_mots) -> list:
-    """
-    Prend une liste de mot, renvoie une liste de vecteur [0, 0, .., 1, .., 0]
-    """
-    integer_encoded = LabelEncoder().fit_transform(liste_mots)
-    integer_encoded = integer_encoded.reshape(len(integer_encoded), 1)
-    return OneHotEncoder(sparse=False).fit_transform(integer_encoded)
+X_train = np.array(X_train)
+y_train = np.array(y_train)
+X_test = np.array(X_test)
+y_test = np.array(y_test)
 
+# Model
+model = keras.Sequential([
+    keras.layers.Embedding(input_dim=10000, output_dim=16, input_length=max_length),
+    keras.layers.GlobalAveragePooling1D(),
+    keras.layers.Dense(24, activation='relu'),
+    keras.layers.Dense(1, activation='sigmoid')
+])
+model.compile(loss='binary_crossentropy', optimizer='adam', metrics=['accuracy'])
+model.summary()
 
-print(dictionary(['cold', 'cold', 'warm', 'cold', 'hot', 'hot', 'warm', 'cold', 'warm', 'hot']))
+model.fit(X_train, y_train, epochs=10, validation_data=(X_test, y_test))
