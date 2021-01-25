@@ -2,15 +2,13 @@ import pandas as pd
 import numpy as np
 from sklearn.utils import shuffle
 from sklearn.preprocessing import LabelBinarizer
-
 from tensorflow import keras
 from tensorflow.keras import layers
-
 from tensorflow.keras.preprocessing.text import Tokenizer
 from tensorflow.keras.preprocessing.sequence import pad_sequences
-
-from sklearn.metrics import confusion_matrix
-import matplotlib.pyplot as plt
+from sklearn.metrics import confusion_matrix, classification_report
+import seaborn as sns
+import pandas as pd
 
 # preprocessing utiler ça
 # https://www.tensorflow.org/api_docs/python/tf/keras/preprocessing/text/Tokenizer
@@ -18,12 +16,15 @@ import matplotlib.pyplot as plt
 # votre matrice de confusion metrics
 
 from sklearn import model_selection
-
 import os
 import matplotlib.pylab as plt
 from matplotlib.pyplot import figure
 from tensorflow.python.keras.initializers.initializers_v2 import Constant
 from tensorflow.python.keras.utils.vis_utils import plot_model
+from sklearn.metrics import confusion_matrix
+
+from utils.glove import readGloveFile, createPretrainedEmbeddingLayer
+from utils.plot import plot_loss, confusion
 
 dir_path = os.path.dirname(os.path.realpath(__file__))
 os.chdir(dir_path)
@@ -56,7 +57,7 @@ for i in range(len(y)):
 
 print("Database of " + str(len(X)) + " subtitles, with : " + str(
     number_main_character) + " main character's sentences and " + str(number_other) +
-      " others's sentences : {} %".format(number_main_character / (number_main_character + number_other)))
+      " others's sentences : {} %".format(100 * number_main_character / (number_main_character + number_other)))
 
 # split train test
 X_train, X_test, y_train, y_test = model_selection.train_test_split(X, y, test_size=0.2)
@@ -79,10 +80,10 @@ X_test = np.array(X_test)
 y_test = np.array(y_test)
 
 
-def define_model():
+def define_model(layer):
     """Create model : embedding and MLP"""
     model = keras.Sequential([
-        layers.Embedding(input_dim=vocab_size, output_dim=8, input_length=max_length),
+        layer,
         # layers.Conv1D(32, 7, padding="valid", activation="relu", strides=3),
         layers.GlobalAveragePooling1D(),
         layers.Dense(32, activation='relu'),
@@ -93,61 +94,22 @@ def define_model():
     return model
 
 
-model = define_model()
-model.compile(loss='binary_crossentropy', optimizer='adam', metrics=['accuracy'])
-model.summary()
-
-# history = model.fit(X_train, y_train, epochs=50, batch_size=20, validation_data=(X_test, y_test))
-# print(history.history)
-
-
-
-
-
-# Prepare Glove File
-# noinspection PyBroadException
-def readGloveFile(gloveFile):
-    with open(gloveFile, 'r', encoding="utf8") as f:
-        wordToGlove = {}  # map from a token (word) to a Glove embedding vector
-        wordToIndex = {}  # map from a token to an index
-        indexToWord = {}  # map from an index to a token
-        count_fail = 0
-        for line in f:
-            record = line.strip().split()
-            token = record[0]  # take the token (word) from the text line
-            try:
-                wordToGlove[token] = np.array(record[1:],
-                                              dtype=np.float32)  # associate the Glove embedding vector to a that token (word)
-            except:
-                print('line skipped : ', count_fail)
-                count_fail += 1
-                pass
-
-        tokens = sorted(wordToGlove.keys())
-        for idx, tok in enumerate(tokens):
-            kerasIdx = idx + 1  # 0 is reserved for masking in Keras (see above)
-            wordToIndex[tok] = kerasIdx  # associate an index to a token (word)
-            indexToWord[kerasIdx] = tok  # associate a word to a token (word). Note: inverse of dictionary above
-
-    return wordToIndex, indexToWord, wordToGlove
-
-
-# Create Pretrained Keras Embedding Layer
-def createPretrainedEmbeddingLayer(wordToGlove, wordToIndex, isTrainable=False):
-    vocabLen = len(wordToIndex)  # adding 1 to account for masking
-    embDim = next(iter(wordToGlove.values())).shape[0]  # 300 in our case
-    print('createPretrainedEmbeddingLayer \nembDim : {}, wordToIndex : {}'.format(len(wordToIndex), embDim))
-    embeddingMatrix = np.zeros((vocabLen, embDim))  # initialize with zeros
-    for word, index in wordToIndex.items():
-        try:
-            embeddingMatrix[index, :] = wordToGlove[word]  # create embedding: word index to Glove word embedding
-        except IndexError:
-            pass
-    print('for out')
-
-    embeddingLayer = keras.layers.Embedding(len(wordToIndex), embDim, embeddings_initializer=Constant(embeddingMatrix),
-                                            trainable=isTrainable)
-    return embeddingLayer
+def define_model_conv(layer):
+    """Create model : embedding and MLP"""
+    model = keras.Sequential([
+        layer,
+        # layers.Conv1D(32, 7, padding="valid", activation="relu", strides=3),
+        layers.Conv1D(128, 5, activation="relu"),
+        layers.MaxPooling1D(5),
+        layers.Conv1D(128, 5, activation="relu"),
+        layers.MaxPooling1D(5),
+        layers.Conv1D(128, 5, activation="relu"),
+        layers.MaxPooling1D(5),
+        layers.Dense(32, activation='relu'),
+        layers.Dropout(.2),
+        layers.Dense(1, activation='sigmoid')
+    ])
+    return model
 
 
 # usage
@@ -155,21 +117,13 @@ wordToIndex, indexToWord, wordToGlove = readGloveFile('glove.6B.50d/glove.6B.50d
 pretrainedEmbeddingLayer = createPretrainedEmbeddingLayer(wordToGlove, wordToIndex, False)
 
 # Model
-model = keras.Sequential([
-    # keras.layers.Embedding(embeddings_initializer=keras.initializers.Constant(embedding_matrix),
-    #                        input_dim=vocab_size, output_dim=16, input_length=max_length),
-    pretrainedEmbeddingLayer,
-    keras.layers.GlobalAveragePooling1D(),
-    keras.layers.Dense(24, activation='relu'),
-    keras.layers.Dense(24, activation='relu'),
-    keras.layers.Dense(1, activation='sigmoid')
-])
+model = define_model(pretrainedEmbeddingLayer)
 model.compile(loss='binary_crossentropy', optimizer='adam', metrics=['accuracy'])
 
 # plot_model(model, to_file='model_plot4a.png', show_shapes=True, show_layer_names=True)
 model.summary()
 
-history = model.fit(X_train, y_train, epochs=100, batch_size=64, validation_data=(X_test, y_test))
+history = model.fit(X_train, y_train, epochs=2, batch_size=64, validation_data=(X_test, y_test))
 print(history.history)
 # model.save('./saved_model/lastest.keras')
 
@@ -178,16 +132,15 @@ print("test loss, test acc:", results)
 predictions = model.predict(X_test[:5])
 print("predictions shape:", predictions.shape)
 
-
-def plot_loss(history=history):
-    figure(figsize=(8, 6))
-    plt.plot(history.history['loss'])
-    plt.plot(history.history['val_loss'])
-    plt.title('model loss')
-    plt.ylabel('loss')
-    plt.xlabel('epoch')
-    plt.legend(['train', 'test'], loc='upper left')
-    plt.show()
-
-
 plot_loss(history)
+Y_pred = model.predict_generator(X_test)
+y_pred = np.argmax(Y_pred, axis=1)
+print('Confusion Matrix')
+conf = confusion_matrix(y_test, y_pred)
+
+print('Classification Report')
+target_names = ['Other', 'Tyrion']
+print(classification_report(y_test, y_pred, target_names=target_names))
+print(y_test, Y_pred)
+confusion(conf)
+
