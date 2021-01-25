@@ -6,8 +6,8 @@ from sklearn.preprocessing import LabelBinarizer
 from tensorflow import keras
 from tensorflow.keras import layers
 
-from keras.preprocessing.text import Tokenizer
-from keras.preprocessing.sequence import pad_sequences
+from tensorflow.keras.preprocessing.text import Tokenizer
+from tensorflow.keras.preprocessing.sequence import pad_sequences
 
 from sklearn.metrics import confusion_matrix
 import matplotlib.pyplot as plt

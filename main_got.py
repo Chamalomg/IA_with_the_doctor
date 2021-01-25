@@ -6,8 +6,8 @@ from sklearn.preprocessing import LabelBinarizer
 from tensorflow import keras
 from tensorflow.keras import layers
 
-from keras.preprocessing.text import Tokenizer
-from keras.preprocessing.sequence import pad_sequences
+from tensorflow.keras.preprocessing.text import Tokenizer
+from tensorflow.keras.preprocessing.sequence import pad_sequences
 
 from sklearn.metrics import confusion_matrix
 import matplotlib.pyplot as plt
@@ -82,7 +82,7 @@ model = keras.Sequential([
 model.compile(loss='binary_crossentropy',optimizer='adam',metrics=['accuracy'])
 model.summary()
 
-model.fit(X_train, y_train, epochs=50, validation_data=(X_test, y_test))
+model.fit(X_train, y_train, epochs=50, batch_size=20, validation_data=(X_test, y_test))
 
 
 
