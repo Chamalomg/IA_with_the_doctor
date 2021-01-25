@@ -1,2 +1,6 @@
 .idea
 glove.840B.300d/**
+__pycache__
+/glove.6B.50d/**
+/glove.6B.200d/**
+glove.6B.200d/glove.6B.200d.txt
