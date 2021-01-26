@@ -14,7 +14,7 @@ EPF, 5ème année
 
 ## Usage
 
-####Installation des dépendances
+Installation des dépendances
 
 ```python
 pip install -r requirement.txt
