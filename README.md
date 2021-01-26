@@ -1,10 +1,12 @@
 # Objectif
 
-Projet visant à pouvoir prédire quel personnage a dit une réplique de Dr.Who
+Projet visant à pouvoir prédire l'attribution d'une réplique à un personnage.
+Ce projet utilise deux datasets qui proposent l'ensemble des dialogues présents dans chaque série.
+Chaque dataset à un intéret : DrWho est immense (240 000 string) avec certaines défaults et le Got est plus restreint (22 300 strings) mais d'excelente qualité.
 
-Base de données utilisée : https://www.kaggle.com/jeanmidev/doctor-who?select=all-scripts.csv
+Base de données Drwho utilisée : https://www.kaggle.com/jeanmidev/doctor-who?select=all-scripts.csv
 
-
+Base de données Got utilisée https://www.kaggle.com/albenft/game-of-thrones-script-all-seasons
 
 ## Groupe de projet : 
 
@@ -14,7 +16,7 @@ EPF, 5ème année
 
 ## Usage
 
-Installation des dépendances
+####Installation des dépendances
 
 ```python
 pip install -r requirement.txt
