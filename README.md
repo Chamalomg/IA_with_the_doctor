@@ -14,10 +14,15 @@ EPF, 5ème année
 
 ## Usage
 
-Installation des dépendances
+####Installation des dépendances
+
 ```python
 pip install -r requirement.txt
 ```
+#### Structure du fichier :
+
+Télécharger le dossier glove.6B.zip : https://nlp.stanford.edu/projects/glove/
+extraire le fichier glove.6B.50d.txt, et le placer dans ./glove.6B.50d/glove.6B.50d.txt
 
 ## License
 [MIT](https://choosealicense.com/licenses/mit/)
